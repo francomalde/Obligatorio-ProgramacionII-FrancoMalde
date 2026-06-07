@@ -4,6 +4,8 @@ import uy.edu.um.tad.hash.MyHash;
 import uy.edu.um.tad.hash.MyHashImpl;
 import uy.edu.um.tad.heap.MyHeap;
 import uy.edu.um.tad.heap.MyHeapImpl;
+import uy.edu.um.tad.list.MyLinkedListImpl;
+import uy.edu.um.tad.list.MyList;
 import uy.edu.um.tad.queue.MyQueue;
 import uy.edu.um.tad.queue.MyQueueImpl;
 import uy.edu.um.tad.stack.MyStack;
@@ -26,9 +28,68 @@ public class ProcessManagerImpl implements ProcessManager{
         this.finishedProcesses = new MyStackImpl<>();
     }
 
+    private void loadUsers(String usersCsvPath) {
+        MyFileManager fileManager = new MyFileManager();
+        MyList<String> lines = fileManager.readFile(usersCsvPath);
+        for (int i = 1; i < lines.size(); i++) {
+            String line = lines.get(i);
+            String[] data = line.split(";", 3);
+            int uid = Integer.parseInt(data[0]);
+            String alias = data[1];
+            String type = data[2];
+            DoorUser user = new DoorUser(uid, alias, type);
+            users.put(uid, user);
+        }
+    }
+
+    private void loadProcesses(String processCsvPath) {
+        MyFileManager fileManager = new MyFileManager();
+        MyList<String> lines = fileManager.readFile(processCsvPath);
+        for (int i = 1; i < lines.size(); i++) {
+            String line = lines.get(i);
+            String[] data = line.split(";", 4);
+            int pid = Integer.parseInt(data[0]);
+            int uid = Integer.parseInt(data[1]);
+            String name = data[2];
+            String eventsText = data[3];
+            DoorUser user = users.get(uid);
+            MyList<ProcessEvent> events = parseEvents(eventsText);
+            DoorProcess process = new DoorProcess(pid, name, user, events);
+            newProcesses.enqueue(process);
+        }
+    }
+
+    private MyList<ProcessEvent> parseEvents(String eventsText) {
+        MyList<ProcessEvent> events = new MyLinkedListImpl<>();
+        eventsText = eventsText.replace("{", "");
+        eventsText = eventsText.replace("}", "");
+        String[] eventParts = eventsText.split("#");
+        for (int i = 0; i < eventParts.length; i++) {
+            String eventText = eventParts[i].trim();
+            String[] eventData = eventText.split(":");
+            String type = eventData[0].trim();
+            String instructionsText = eventData[1].trim();
+            instructionsText = instructionsText.replace("[", "");
+            instructionsText = instructionsText.replace("]", "");
+            String[] instructionParts = instructionsText.split(",");
+            MyList<String> instructions = new MyLinkedListImpl<>();
+            for (int j = 0; j < instructionParts.length; j++) {
+                String instruction = instructionParts[j].trim();
+                instructions.add(instruction);
+            }
+            ProcessEvent event = new ProcessEvent(type, instructions);
+            events.add(event);
+        }
+        return events;
+    }
+
     @Override
     public void loadProcessAndUserData(String processCsvPath, String usersCsvPath) {
-        System.out.println("IMPLEMENTAR");
+        loadUsers(usersCsvPath);
+        loadProcesses(processCsvPath);
+
+        System.out.println("Usuarios cargados: " + users.size());
+        System.out.println("Procesos nuevos cargados: " + newProcesses.size());
     }
 
     @Override
