@@ -184,10 +184,31 @@ public class ProcessManagerImpl implements ProcessManager{
         }
     }
 
+    private boolean isAdminUser(int uid) {
+        DoorUser user = users.get(uid);
+        if (user == null) {
+            return false;
+        }
+        return user.getType().equals("ADMIN");
+    }
+
     @Override
     public void terminateProcess(int uid) {
-
-        System.out.println("IMPLEMENTAR");
+        if (runningProcess == null) {
+            System.out.println("No hay proceso en ejecucion para terminar.");
+            return;
+        }
+        int processUserId = runningProcess.getUser().getUid();
+        if (processUserId != uid && !isAdminUser(uid)) {
+            System.out.println("El usuario UID:" + uid + " no tiene permisos para terminar este proceso.");
+            return;
+        }
+        runningProcess.setState("FINISHED");
+        runningProcess.setFinishState("TERMINATED");
+        addFinishedProcess(runningProcess);
+        System.out.println("Proceso terminado:");
+        System.out.println(runningProcess.finishedInfo());
+        runningProcess = null;
     }
 
     @Override
