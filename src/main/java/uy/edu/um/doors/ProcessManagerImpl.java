@@ -9,8 +9,12 @@ import uy.edu.um.tad.list.MyList;
 import uy.edu.um.tad.queue.EmptyQueueException;
 import uy.edu.um.tad.queue.MyQueue;
 import uy.edu.um.tad.queue.MyQueueImpl;
+import uy.edu.um.tad.stack.EmptyStackException;
 import uy.edu.um.tad.stack.MyStack;
 import uy.edu.um.tad.stack.MyStackImpl;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class ProcessManagerImpl implements ProcessManager{
 
@@ -114,19 +118,70 @@ public class ProcessManagerImpl implements ProcessManager{
 
     @Override
     public void executeNextProcess() {
-
-        System.out.println("IMPLEMENTAR");
+        if (runningProcess != null) {
+            System.out.println("Ya hay un proceso en ejecucion:");
+            System.out.println(runningProcess.basicInfo());
+            return;
+        }
+        if (pendingProcesses.isEmpty()) {
+            System.out.println("No hay procesos pendientes para ejecutar.");
+            return;
+        }
+        DoorProcess process = pendingProcesses.remove();
+        process.setState("RUNNING");
+        runningProcess = process;
+        System.out.println("Proceso en ejecucion:");
+        System.out.println(runningProcess.basicInfo());
     }
 
     @Override
     public void finishProcessOk() {
-        System.out.println("IMPLEMENTAR");
+        if (runningProcess == null) {
+            System.out.println("No hay proceso en ejecucion para finalizar.");
+            return;
+        }
+        runningProcess.setState("FINISHED");
+        runningProcess.setFinishState("OK");
+        addFinishedProcess(runningProcess);
+        System.out.println("Proceso finalizado correctamente:");
+        System.out.println(runningProcess.finishedInfo());
+        runningProcess = null;
     }
 
     @Override
     public void finishProcessError() {
+        if (runningProcess == null) {
+            System.out.println("No hay proceso en ejecucion para finalizar.");
+            return;
+        }
+        runningProcess.setState("FINISHED");
+        runningProcess.setFinishState("ERROR");
+        addFinishedProcess(runningProcess);
+        System.out.println("Proceso finalizado con error:");
+        System.out.println(runningProcess.finishedInfo());
+        runningProcess = null;
+    }
 
-        System.out.println("IMPLEMENTAR");
+    private void addFinishedProcess(DoorProcess process) {
+        if (finishedProcesses.size() == MAX_FINISHED_PROCESS_ON_RAM) {
+            logFinishedStackOverflow();
+        }
+        finishedProcesses.push(process);
+    }
+
+    private void logFinishedStackOverflow() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String timestamp = LocalDateTime.now().format(formatter);
+        System.out.println("[" + timestamp + "]: Finished process stack overflow");
+        while (!finishedProcesses.isEmpty()) {
+            DoorProcess process;
+            try {
+                 process = finishedProcesses.pop();
+            } catch (EmptyStackException e) {
+                throw new RuntimeException(e);
+            }
+            System.out.println(process.finishedInfo());
+        }
     }
 
     @Override
