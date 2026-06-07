@@ -73,7 +73,7 @@ public class DoorProcess implements Comparable<DoorProcess>{
         }
         int totalEvents = events.size();
         int userWeight = user.getWeight();
-        this.priority = ((cpuCount * 5) + (ramCount * 3) + (diskCount * 2)) * userWeight + totalEvents;
+        this.priority = (((cpuCount * 8) + (ramCount * 2) + (diskCount * 2))/totalEvents) + (userWeight * totalEvents);
     }
 
     public String basicInfo() {
