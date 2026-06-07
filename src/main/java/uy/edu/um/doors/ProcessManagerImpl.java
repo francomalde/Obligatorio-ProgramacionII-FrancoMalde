@@ -20,6 +20,7 @@ public class ProcessManagerImpl implements ProcessManager{
 
     //EL DISEÑO DE LA ESTRUCTURA DE ALMACENAMIENTO DEBE IMPLEMENTARSE EN ESTA CLASE EN RELACIÓN CON LAS ENTIDADES QUE DEFINA
     private MyHash<Integer, DoorUser> users;
+    private MyHash<Integer, DoorProcess> allProcesses;
     private MyQueue<DoorProcess> newProcesses;
     private MyHeap<DoorProcess> pendingProcesses;
     private DoorProcess runningProcess;
@@ -27,6 +28,7 @@ public class ProcessManagerImpl implements ProcessManager{
 
     public ProcessManagerImpl() {
         this.users = new MyHashImpl<>();
+        this.allProcesses = new MyHashImpl<>();
         this.newProcesses = new MyQueueImpl<>();
         this.pendingProcesses = new MyHeapImpl<>(false);
         this.runningProcess = null;
@@ -60,6 +62,7 @@ public class ProcessManagerImpl implements ProcessManager{
             DoorUser user = users.get(uid);
             MyList<ProcessEvent> events = parseEvents(eventsText);
             DoorProcess process = new DoorProcess(pid, name, user, events);
+            allProcesses.put(pid, process);
             newProcesses.enqueue(process);
         }
     }
@@ -213,22 +216,64 @@ public class ProcessManagerImpl implements ProcessManager{
 
     @Override
     public void printStatus() {
-
-        System.out.println("IMPLEMENTAR");
+        System.out.println("===== DOORS STATUS ======");
+        System.out.println("Usuarios cargados: " + users.size());
+        System.out.println("Procesos totales: " + allProcesses.size());
+        System.out.println("Procesos NEW: " + newProcesses.size());
+        System.out.println("Procesos PENDING: " + pendingProcesses.size());
+        if (runningProcess == null) {
+            System.out.println("Proceso RUNNING: ninguno");
+        } else {
+            System.out.println("Proceso RUNNING:");
+            System.out.println(runningProcess.basicInfo());
+        }
+        System.out.println("Procesos FINISHED en RAM: " + finishedProcesses.size());
     }
 
     @Override
     public void printStatusVerbose() {
-        System.out.println("IMPLEMENTAR");
+        System.out.println("===== DOORS STATUS VERBOSE =====");
+        MyList<DoorProcess> processes = allProcesses.values();
+        for (int i = 0; i < processes.size(); i++) {
+            DoorProcess process = processes.get(i);
+            System.out.println(process.fullInfo());
+            if (i < processes.size() - 1) {
+                System.out.println("-----------------------------------");
+            }
+        }
     }
 
     @Override
     public void printStatusByUser(int uid) {
-        System.out.println("IMPLEMENTAR");
+        DoorUser user = users.get(uid);
+        if (user == null) {
+            System.out.println("No existe un usuario con UID=" + uid);
+            return;
+        }
+        System.out.println("===== PROCESOS DEL USUARIO =====");
+        System.out.println(user.toString());
+        MyList<DoorProcess> processes = allProcesses.values();
+        boolean found = false;
+        for (int i = 0; i < processes.size(); i++) {
+            DoorProcess process = processes.get(i);
+            if (process.getUser().getUid() == uid) {
+                System.out.println(process.fullInfo());
+                System.out.println("-----------------------------------");
+                found = true;
+            }
+        }
+        if (!found) {
+            System.out.println("El usuario no tiene procesos asociados.");
+        }
     }
 
     @Override
     public void printStatusByProcess(int pid) {
-        System.out.println("IMPLEMENTAR");
+        DoorProcess process = allProcesses.get(pid);
+        if (process == null) {
+            System.out.println("No existe un proceso con PID=" + pid);
+            return;
+        }
+        System.out.println(process.fullInfo());
     }
 }

@@ -77,7 +77,7 @@ public class DoorProcess implements Comparable<DoorProcess>{
     }
 
     public String basicInfo() {
-        return "PID=" + pid + " | " + name + " | " + user.toString() + " | P=" + priority;
+        return "PID=" + pid + " | " + name + " | STATE: " + state + " | " + user.toString() + " | P=" + priority;
     }
 
     public String finishedInfo() {
