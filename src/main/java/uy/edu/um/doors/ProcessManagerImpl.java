@@ -19,6 +19,8 @@ import java.time.format.DateTimeFormatter;
 public class ProcessManagerImpl implements ProcessManager{
 
     //EL DISEÑO DE LA ESTRUCTURA DE ALMACENAMIENTO DEBE IMPLEMENTARSE EN ESTA CLASE EN RELACIÓN CON LAS ENTIDADES QUE DEFINA
+    private static final String LOG_FILE_PATH = "doors.log";
+
     private MyHash<Integer, DoorUser> users;
     private MyHash<Integer, DoorProcess> allProcesses;
     private MyQueue<DoorProcess> newProcesses;
@@ -175,16 +177,24 @@ public class ProcessManagerImpl implements ProcessManager{
     private void logFinishedStackOverflow() {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         String timestamp = LocalDateTime.now().format(formatter);
-        System.out.println("[" + timestamp + "]: Finished process stack overflow");
+        MyList<String> logLines = new MyLinkedListImpl<>();
+        String header = "[" + timestamp + "]: Finished process stack overflow";
+        logLines.add(header);
+        System.out.println(header);
         while (!finishedProcesses.isEmpty()) {
             DoorProcess process;
             try {
-                 process = finishedProcesses.pop();
+                process = finishedProcesses.pop();
             } catch (EmptyStackException e) {
-                throw new RuntimeException(e);
+                System.out.println("Error vaciando pila de finalizados.");
+                return;
             }
-            System.out.println(process.finishedInfo());
+            String processInfo = process.finishedInfo();
+            logLines.add(processInfo);
+            System.out.println(processInfo);
         }
+        MyFileManager fileManager = new MyFileManager();
+        fileManager.writeFile(logLines, LOG_FILE_PATH);
     }
 
     private boolean isAdminUser(int uid) {

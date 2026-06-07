@@ -22,7 +22,7 @@ public class MyFileManager {
     }
 
     public void writeFile(MyList<String> content, String filePath) {
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(filePath))) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(filePath, true))) {
             for (int i = 0; i < content.size(); i++) {
                 bw.write(content.get(i));
                 bw.newLine();
