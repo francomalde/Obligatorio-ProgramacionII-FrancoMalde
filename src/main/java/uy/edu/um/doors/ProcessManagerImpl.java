@@ -19,7 +19,12 @@ import java.time.format.DateTimeFormatter;
 public class ProcessManagerImpl implements ProcessManager{
 
     //EL DISEÑO DE LA ESTRUCTURA DE ALMACENAMIENTO DEBE IMPLEMENTARSE EN ESTA CLASE EN RELACIÓN CON LAS ENTIDADES QUE DEFINA
-    private static final String LOG_FILE_PATH = "doors.log";
+    private String getLogFilePath() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String date = LocalDateTime.now().format(formatter);
+
+        return "DOORS_PROCESS_LOG_" + date;
+    }
 
     private MyHash<Integer, DoorUser> users;
     private MyHash<Integer, DoorProcess> allProcesses;
@@ -114,6 +119,7 @@ public class ProcessManagerImpl implements ProcessManager{
             }
             process.calcularPriority();
             process.setState("PENDING");
+            writeLogLine("NEW PENDING PROCESS: " + process.basicInfo());
             pendingProcesses.insert(process);
             preparedCount++;
         }
@@ -135,6 +141,7 @@ public class ProcessManagerImpl implements ProcessManager{
         DoorProcess process = pendingProcesses.remove();
         process.setState("RUNNING");
         runningProcess = process;
+        writeExecutingProcessLog(runningProcess);
         System.out.println("Proceso en ejecucion:");
         System.out.println(runningProcess.basicInfo());
     }
@@ -147,6 +154,7 @@ public class ProcessManagerImpl implements ProcessManager{
         }
         runningProcess.setState("FINISHED");
         runningProcess.setFinishState("OK");
+        writeLogLine("ENDING PROCESS: PID=" + runningProcess.getPid() + " | STATE: OK");
         addFinishedProcess(runningProcess);
         System.out.println("Proceso finalizado correctamente:");
         System.out.println(runningProcess.finishedInfo());
@@ -161,6 +169,7 @@ public class ProcessManagerImpl implements ProcessManager{
         }
         runningProcess.setState("FINISHED");
         runningProcess.setFinishState("ERROR");
+        writeLogLine("ENDING PROCESS: PID=" + runningProcess.getPid() + " | STATE: ERROR");
         addFinishedProcess(runningProcess);
         System.out.println("Proceso finalizado con error:");
         System.out.println(runningProcess.finishedInfo());
@@ -194,7 +203,7 @@ public class ProcessManagerImpl implements ProcessManager{
             System.out.println(processInfo);
         }
         MyFileManager fileManager = new MyFileManager();
-        fileManager.writeFile(logLines, LOG_FILE_PATH);
+        fileManager.writeFile(logLines, getLogFilePath());
     }
 
     private boolean isAdminUser(int uid) {
@@ -218,6 +227,11 @@ public class ProcessManagerImpl implements ProcessManager{
         }
         runningProcess.setState("FINISHED");
         runningProcess.setFinishState("TERMINATED");
+        DoorUser terminatingUser = users.get(uid);
+        writeLogLine("ENDING PROCESS: PID=" + runningProcess.getPid()
+                + " | STATE: TERMINATED by USER:"
+                + terminatingUser.getAlias()
+                + " UID:" + terminatingUser.getUid());
         addFinishedProcess(runningProcess);
         System.out.println("Proceso terminado:");
         System.out.println(runningProcess.finishedInfo());
@@ -285,5 +299,32 @@ public class ProcessManagerImpl implements ProcessManager{
             return;
         }
         System.out.println(process.fullInfo());
+    }
+
+    private String getTimestamp() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        return LocalDateTime.now().format(formatter);
+    }
+
+    private void writeLogLine(String line) {
+        MyList<String> logLines = new MyLinkedListImpl<>();
+        logLines.add("[" + getTimestamp() + "]: " + line);
+        MyFileManager fileManager = new MyFileManager();
+        fileManager.writeFile(logLines, getLogFilePath());
+    }
+
+    private void writeExecutingProcessLog(DoorProcess process) {
+        MyList<String> logLines = new MyLinkedListImpl<>();
+        logLines.add("[" + getTimestamp() + "]: EXECUTING PROCESS: PID="
+                + process.getPid() + " | USER:"
+                + process.getUser().getAlias() + " UID:"
+                + process.getUser().getUid());
+        MyList<ProcessEvent> events = process.getEvents();
+        for (int i = 0; i < events.size(); i++) {
+            logLines.add(events.get(i).toString());
+        }
+        MyFileManager fileManager = new MyFileManager();
+        fileManager.writeFile(logLines, getLogFilePath());
+
     }
 }
