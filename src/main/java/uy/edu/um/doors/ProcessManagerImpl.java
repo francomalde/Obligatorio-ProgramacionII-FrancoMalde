@@ -6,6 +6,7 @@ import uy.edu.um.tad.heap.MyHeap;
 import uy.edu.um.tad.heap.MyHeapImpl;
 import uy.edu.um.tad.list.MyLinkedListImpl;
 import uy.edu.um.tad.list.MyList;
+import uy.edu.um.tad.queue.EmptyQueueException;
 import uy.edu.um.tad.queue.MyQueue;
 import uy.edu.um.tad.queue.MyQueueImpl;
 import uy.edu.um.tad.stack.MyStack;
@@ -94,8 +95,21 @@ public class ProcessManagerImpl implements ProcessManager{
 
     @Override
     public void prepareProcesses() {
-
-        System.out.println("IMPLEMENTAR");
+        int preparedCount = 0;
+        while (!newProcesses.isEmpty()) {
+            DoorProcess process = null;
+            try {
+                process = newProcesses.dequeue();
+            } catch (EmptyQueueException e) {
+                throw new RuntimeException(e);
+            }
+            process.calcularPriority();
+            process.setState("PENDING");
+            pendingProcesses.insert(process);
+            preparedCount++;
+        }
+        System.out.println("Procesos preparados: " + preparedCount);
+        System.out.println("Procesos pendientes: " + pendingProcesses.size());
     }
 
     @Override
