@@ -6,7 +6,7 @@ public class DoorProcess implements Comparable<DoorProcess>{
     private int pid;
     private String name;
     private DoorUser user;
-    private int priority;
+    private double priority;
     private String state;
     private String finishState;
     private MyList<ProcessEvent> events;
@@ -33,7 +33,7 @@ public class DoorProcess implements Comparable<DoorProcess>{
         return user;
     }
 
-    public int getPriority() {
+    public double getPriority() {
         return priority;
     }
 
@@ -73,7 +73,7 @@ public class DoorProcess implements Comparable<DoorProcess>{
         }
         int totalEvents = events.size();
         int userWeight = user.getWeight();
-        this.priority = (((cpuCount * 8) + (ramCount * 2) + (diskCount * 2))/totalEvents) + (userWeight * totalEvents);
+        this.priority = (double) (((cpuCount * 8) + (ramCount * 2) + (diskCount * 2))/totalEvents) + (userWeight * totalEvents);
     }
 
     public String basicInfo() {
@@ -94,7 +94,7 @@ public class DoorProcess implements Comparable<DoorProcess>{
 
     @Override
     public int compareTo(DoorProcess other) {
-        return Integer.compare(this.priority, other.priority);
+        return Double.compare(this.priority, other.priority);
 
     }
 }
